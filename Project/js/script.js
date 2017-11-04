@@ -1,14 +1,33 @@
-var map;
+var map, viewModel;
 var markers = [];
+var googleMapAPIDeferred = $.Deferred();
 
-/*Array of locations that are show by markers by default*/
+if (!String.prototype.startsWith) {
+	String.prototype.startsWith = function (searchString, position) {
+		return this.substr(position || 0, searchString.length) === searchString;
+	};
+}
+
+/*Array of locations that are shown as top 5 places*/
 var locations = [
           {title: 'Goa Science Center', location: {lat: 15.478662, lng: 73.808727}},
           {title: 'Santana Church', location: {lat: 15.478166, lng: 73.891640}},
           {title: 'Fort Aguda', location: {lat: 15.492393, lng: 73.773537}},
           {title: 'Dias Beach', location: {lat: 15.453432, lng: 73.802273}},
           {title: 'Santa Cruz Church', location: {lat: 15.476346, lng: 73.844776}}
-        ];
+ ];
+
+
+/*lsit of places in goa with lat lng*/
+var listOfPlacesDataSet = [
+	{title: 'Teleigao market', location: {lat: 15.470018, lng: 73.821902}},
+	{title: 'Goa University', location: {lat: 15.458478, lng: 73.834476}},
+	{title: 'Dona Paula', location: {lat: 15.461374, lng: 73.813602}},
+	{title: 'Reis Magos Fort', location: {lat: 15.497108, lng: 73.809500}},
+	{title: 'Goa Museum', location: {lat: 15.493179, lng: 73.833060}},
+	{title: 'Joggers Park', location: {lat: 15.486086, lng: 73.826125}},
+	{title: 'Boca de Vaca', location: {lat: 15.494750, lng: 73.825722}},
+];
 
 /*This function takes in a COLOR, 
 and then creates a new marker icon of that color. 
@@ -25,22 +44,12 @@ function makeMarkerIcon(markerColor) {
 		return markerImage;
 }     
 
-var showDefaultMarkers = function() {
-  	 var bounds = new google.maps.LatLngBounds();
-	// Extend the boundaries of the map for each marker and display the marker
-	 for (var i = 0; i < markers.length; i++) {
-		markers[i].setMap(map);
-		bounds.extend(markers[i].position);
-	}
-	map.fitBounds(bounds);
-}   
-      
-
 /*Creates default 5 markers on the map*/
-var createMarkers = function() {
+var createMarkers = function(array) {
+	markers = [];
 	var defaultIcon = makeMarkerIcon('d9f111');
 	var highlightedIcon = makeMarkerIcon('dc0b28');  
-	locations.forEach(function(location, index) {
+	array.forEach(function(location, index) {
 		var position = location.location;
 		var title = location.title
 		var marker = new google.maps.Marker({
@@ -66,17 +75,39 @@ var createMarkers = function() {
         marker.addListener('mouseout', function() {
             this.setIcon(defaultIcon);
     	});  
-        showDefaultMarkers();
 	});	
 };
 
-/*Loads the map*/
-var initMap = function() {
-	map = new google.maps.Map(document.getElementById('map'), {
-          center: {lat: 15.488340, lng: 73.829052},
-          zoom: 13,
-          mapTypeControl: false,
-          styles: [
+
+/*creates the list of places that is shown in the left nav menu*/
+var generateList = function() {
+	locations.forEach(function(obj){
+		viewModel.listOfPlaces.push(obj);
+	});
+
+	listOfPlacesDataSet.forEach(function(obj){
+		viewModel.listOfPlaces.push(obj);
+	});
+
+	/*sort listOfPlaces array*/
+	viewModel.listOfPlaces.sort(function(a, b) {
+ 		var nameA = a.title.toUpperCase(); // ignore upper and lowercase
+  		var nameB = b.title.toUpperCase(); // ignore upper and lowercase
+  		if (nameA < nameB) {
+    		return -1;
+  		}
+  		if (nameA > nameB) {
+   			return 1;
+  		}
+
+  		// names must be equal
+  		return 0;
+	});
+};
+
+/*styles for the google map*/
+var getStyes = function() {
+	return [
   {
     "elementType": "geometry",
     "stylers": [
@@ -277,14 +308,96 @@ var initMap = function() {
       }
     ]
   }
-]
+];
+}
+
+/*Loads the map*/
+var initMap = function(response) {
+	map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 15.488340, lng: 73.829052},
+          zoom: 10,
+          mapTypeControl: false,
+          styles: getStyes()
         });
-	createMarkers();
+	googleMapAPIDeferred.resolve();
 };
 
-function mapViewModel() {
+var createMapBounds = function(){
+	var bounds = new google.maps.LatLngBounds();
+	// Extend the boundaries of the map for each marker and display the marker
+	for (var i = 0; i < markers.length; i++) {
+		markers[i].setMap(map);
+		bounds.extend(markers[i].position);
+	}
+	map.fitBounds(bounds);
+}
 
+/*our viewModel the project*/
+function mapViewModel() {
+	var self = this;
+	/*This will show by markers of the top 5 places in the neighbourhood*/
+	self.showListings = function() {
+		self.hideListings();
+		createMarkers(locations);
+		createMapBounds();
+		/*hide the navbar so the user can view the complete map*/
+		self.toggleMenu();
+	};
+
+	/*This will hide the markers of the top 5 places in the neighbourhood*/
+	self.hideListings = function() {
+		for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(null);
+        }
+        /*hide the navbar so the user can view the complete map*/
+        self.toggleMenu();
+	};
+
+	/*function will toggle the sidebar on and off*/
+	self.toggleMenu = function() {
+		$("#wrapper").toggleClass("toggled");
+	};
+
+	self.projectTitle = ko.observable('Explore Goa');
+	self.listOfPlaces = ko.observableArray([]);
+	self.showNeighbourhoodMap = function(){
+		self.hideListings();
+		viewModel.listOfPlaces([]);
+		generateList();
+		createMarkers(viewModel.listOfPlaces());
+		createMapBounds();
+		self.toggleMenu();
+	};
+
+	self.filterLocations = function() {
+		var text = $('#searchInput').get(0).value;
+		var filteredList = [];
+		if (isNaN(text) && text.trim() !== ""){
+			viewModel.listOfPlaces().forEach(function(location){
+				if (location.title.toLowerCase().startsWith(text)) {
+					filteredList.push(location);
+				}
+			});
+			self.hideListings();
+			viewModel.listOfPlaces(filteredList);
+			createMarkers(viewModel.listOfPlaces());
+			createMapBounds();
+		}
+	}
+
+	/*will open info window of the location*/
+	self.showInfo = function() {
+		alert('location clicked');
+	};
 
 }
 
-//ko.applyBindings(new mapViewModel())
+$(document).ready(function(){
+	/*apply bindings when the page is ready*/
+	viewModel = new mapViewModel();
+	$.when(googleMapAPIDeferred).done(function(){
+		generateList();
+		viewModel.showNeighbourhoodMap();
+	}); 
+    ko.applyBindings(viewModel);
+});
