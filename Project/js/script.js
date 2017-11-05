@@ -5,13 +5,14 @@ var infoWindow;
 var details;
 
 if (!String.prototype.startsWith) {
-    String.prototype.startsWith = function(searchString, position) {
+    String.prototype.startsWith = function (searchString, position) {
         return this.substr(position || 0, searchString.length) === searchString;
     };
 }
 
 /*Array of locations that are shown as top 5 places*/
-var locations = [{
+var locations = [
+    {
         title: 'Goa Science Center',
         location: {
             lat: 15.478662,
@@ -48,9 +49,9 @@ var locations = [{
     }
 ];
 
-
-/*lsit of places in goa with lat lng*/
-var listOfPlacesDataSet = [{
+/*list of places in goa with lat lng*/
+var listOfPlacesDataSet = [
+    {
         title: 'Teleigao market',
         location: {
             lat: 15.470018,
@@ -98,38 +99,38 @@ var listOfPlacesDataSet = [{
             lat: 15.494750,
             lng: 73.825722
         }
-    },
+    }
 ];
 
-var getDeatislFromFoursquare = function(location, deferred) {
+var getDeatislFromFoursquare = function (location, deferred) {
     var clientID = '3PR50Y1HIT2PB1DYIBYUBFS0T2ZOSHIBBGSPKJ221AYEVMNW';
     var clientSecret = 'Q3TYO04YZZAZZYEN30WR4ZTKGKD4KDQ0VBSBUJ5AOIKDYSLW';
     $.ajax({
         url: 'https://api.foursquare.com/v2/venues/search?ll=' +
-            location.location.lat + ',' + location.location.lng + '&client_id=' + clientID +
-            '&client_secret=' + clientSecret + '&query=' + location.title +
-            '&v=20170708' + '&m=foursquare',
-        success: function(response) {
+        location.location.lat + ',' + location.location.lng + '&client_id=' + clientID +
+        '&client_secret=' + clientSecret + '&query=' + location.title +
+        '&v=20170708' + '&m=foursquare',
+        success: function (response) {
             deferred.resolve();
             details = response.response.venues[0];
         },
-        error: function(response) {
-            alert('Foursquare is not responding. Please try again.')
+        error: function (response) {
+            alert('Foursquare is not responding. Please try again.');
         }
-    })
+    });
 };
 
-/*this function will populate the infowindow when a 
+/*this function will populate the infowindow when a
  marker is clicked explicitly or from the list*/
-var populateInfoWindow = function(marker, infoWindow, location) {
+var populateInfoWindow = function (marker, infoWindow, location) {
     var foursquareDeferred = $.Deferred();
     details = {};
     getDeatislFromFoursquare(location, foursquareDeferred);
-    $.when(foursquareDeferred).then(function() {
+    $.when(foursquareDeferred).then(function () {
         // Check to make sure the infowindow is not already opened on this marker.
         if (infoWindow.marker != marker) {
             // Make sure the marker property is cleared if the infowindow is closed.
-            infoWindow.addListener('closeclick', function() {
+            infoWindow.addListener('closeclick', function () {
                 infoWindow.marker = null;
                 marker.setIcon(makeMarkerIcon('d9f111'));
             });
@@ -141,10 +142,10 @@ var populateInfoWindow = function(marker, infoWindow, location) {
     });
 };
 
-/*This function takes in a COLOR, 
-and then creates a new marker icon of that color. 
-The icon will be 21 px wide by 34 high, have an origin of 0, 0 
-and be anchored at 10, 34).*/
+/*This function takes in a COLOR,
+ and then creates a new marker icon of that color.
+ The icon will be 21 px wide by 34 high, have an origin of 0, 0
+ and be anchored at 10, 34).*/
 function makeMarkerIcon(markerColor) {
     var markerImage = new google.maps.MarkerImage(
         'http://chart.googleapis.com/chart?chst=d_map_spin&chld=1.15|0|' + markerColor +
@@ -157,14 +158,14 @@ function makeMarkerIcon(markerColor) {
 }
 
 /*Creates default markers on the map*/
-var createMarkers = function(array) {
+var createMarkers = function (array) {
     markers = [];
     infoWindow = new google.maps.InfoWindow();
     var defaultIcon = makeMarkerIcon('d9f111');
     var highlightedIcon = makeMarkerIcon('dc0b28');
-    array.forEach(function(location, index) {
+    array.forEach(function (location, index) {
         var position = location.location;
-        var title = location.title
+        var title = location.title;
         var marker = new google.maps.Marker({
             position: position,
             title: title,
@@ -177,20 +178,23 @@ var createMarkers = function(array) {
         markers.push(marker);
 
         /*create click event listeners for each*/
-        marker.addListener('click', function() {
+        marker.addListener('click', function () {
             if (marker.getAnimation() !== null) {
                 marker.setAnimation(null);
             } else {
                 marker.setAnimation(google.maps.Animation.BOUNCE);
             }
+            setTimeout(function () {
+                marker.setAnimation(null);
+            }, 900);
             populateInfoWindow(this, infoWindow, location);
         });
 
-        marker.addListener('mouseover', function() {
+        marker.addListener('mouseover', function () {
             this.setIcon(highlightedIcon);
         });
 
-        marker.addListener('mouseout', function() {
+        marker.addListener('mouseout', function () {
             this.setIcon(defaultIcon);
         });
     });
@@ -198,18 +202,18 @@ var createMarkers = function(array) {
 
 
 /*creates the list of places that is shown in the left nav menu*/
-var generateList = function() {
+var generateList = function () {
     viewModel.listOfPlaces([]);
-    locations.forEach(function(obj) {
+    locations.forEach(function (obj) {
         viewModel.listOfPlaces.push(obj);
     });
 
-    listOfPlacesDataSet.forEach(function(obj) {
+    listOfPlacesDataSet.forEach(function (obj) {
         viewModel.listOfPlaces.push(obj);
     });
 
     /*sort listOfPlaces array*/
-    viewModel.listOfPlaces.sort(function(a, b) {
+    viewModel.listOfPlaces.sort(function (a, b) {
         var nameA = a.title.toUpperCase(); // ignore upper and lowercase
         var nameB = b.title.toUpperCase(); // ignore upper and lowercase
         if (nameA < nameB) {
@@ -224,14 +228,18 @@ var generateList = function() {
     });
 };
 
+var googleErrorHandler = function () {
+    alert('Google API failed to lead. Please refresh your screen');
+};
+
 /*styles for the google map*/
-var getStyes = function() {
+var getStyes = function () {
     return [{
-            "elementType": "geometry",
-            "stylers": [{
-                "color": "#242f3e"
-            }]
-        },
+        "elementType": "geometry",
+        "stylers": [{
+            "color": "#242f3e"
+        }]
+    },
         {
             "elementType": "labels.text.fill",
             "stylers": [{
@@ -304,8 +312,8 @@ var getStyes = function() {
             "featureType": "road.arterial",
             "elementType": "labels",
             "stylers": [{
-                    "color": "#887168"
-                },
+                "color": "#887168"
+            },
                 {
                     "visibility": "off"
                 }
@@ -342,8 +350,8 @@ var getStyes = function() {
         {
             "featureType": "road.local",
             "stylers": [{
-                    "color": "#7c92ad"
-                },
+                "color": "#7c92ad"
+            },
                 {
                     "visibility": "off"
                 }
@@ -385,10 +393,10 @@ var getStyes = function() {
             }]
         }
     ];
-}
+};
 
 /*Loads the map*/
-var initMap = function(response) {
+var initMap = function (response) {
     map = new google.maps.Map(document.getElementById('map'), {
         center: {
             lat: 15.488340,
@@ -401,7 +409,7 @@ var initMap = function(response) {
     googleMapAPIDeferred.resolve();
 };
 
-var createMapBounds = function() {
+var createMapBounds = function () {
     var bounds = new google.maps.LatLngBounds();
     // Extend the boundaries of the map for each marker and display the marker
     for (var i = 0; i < markers.length; i++) {
@@ -409,13 +417,13 @@ var createMapBounds = function() {
         bounds.extend(markers[i].position);
     }
     map.fitBounds(bounds);
-}
+};
 
 /*our viewModel the project*/
 function mapViewModel() {
     var self = this;
     /*This will show by markers of the top 5 places in the neighbourhood*/
-    self.showListings = function() {
+    self.showListings = function () {
         self.hideListings();
         createMarkers(locations);
         createMapBounds();
@@ -424,7 +432,7 @@ function mapViewModel() {
     };
 
     /*This will hide the markers of the top 5 places in the neighbourhood*/
-    self.hideListings = function() {
+    self.hideListings = function () {
         for (var i = 0; i < markers.length; i++) {
             markers[i].setMap(null);
         }
@@ -433,7 +441,7 @@ function mapViewModel() {
     };
 
     /*function will toggle the sidebar on and off*/
-    self.toggleMenu = function() {
+    self.toggleMenu = function () {
         $("#wrapper").toggleClass("toggled");
     };
 
@@ -441,7 +449,7 @@ function mapViewModel() {
     self.listOfPlaces = ko.observableArray([]);
 
     /*function shows all the default listings*/
-    self.showNeighbourhoodMap = function() {
+    self.showNeighbourhoodMap = function () {
         self.hideListings();
         viewModel.listOfPlaces([]);
         generateList();
@@ -450,19 +458,21 @@ function mapViewModel() {
         self.toggleMenu();
     };
 
+    self.searchQuery = ko.observable();
+
     /*function that filters based on search query*/
-    self.filterLocations = function() {
-        var text = $('#searchInput').get(0).value;
+    self.filterLocations = function () {
+        var text = self.searchQuery();
         var filteredList = [];
         generateList();
         if (isNaN(text) && text.trim() !== "") {
-            viewModel.listOfPlaces().forEach(function(location) {
+            viewModel.listOfPlaces().forEach(function (location) {
                 if (location.title.toLowerCase().startsWith(text)) {
                     filteredList.push(location);
                 }
             });
             if (filteredList.length === 0) {
-                alert('No places found. Please query your filter search again.')
+                alert('No places found. Please query your filter search again.');
             } else {
                 viewModel.listOfPlaces(filteredList);
             }
@@ -470,14 +480,14 @@ function mapViewModel() {
         self.hideListings();
         createMarkers(viewModel.listOfPlaces());
         createMapBounds();
-    }
+    };
 
     /*will open info window of the location*/
-    self.showInfo = function(obj) {
-        markers.forEach(function(marker) {
+    self.showInfo = function (obj) {
+        markers.forEach(function (marker) {
+            marker.setIcon(makeMarkerIcon('d9f111'));
             if (marker.title === obj.title) {
-                infoWindow = new google.maps.InfoWindow();
-                marker.setIcon(makeMarkerIcon('dc0b28'))
+                marker.setIcon(makeMarkerIcon('dc0b28'));
                 populateInfoWindow(marker, infoWindow, obj);
             }
         });
@@ -485,10 +495,10 @@ function mapViewModel() {
 
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
     /*apply bindings when the page is ready*/
     viewModel = new mapViewModel();
-    $.when(googleMapAPIDeferred).done(function() {
+    $.when(googleMapAPIDeferred).done(function () {
         generateList();
         viewModel.showNeighbourhoodMap();
     });
