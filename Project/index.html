@@ -32,7 +32,7 @@
          		  	<br><br>
          		  	<!--ko foreach: listOfPlaces -->
          		  	<li class="list_places">
-         		  		<a data-bind="text: title, click: $root.showInfo"></a>
+         		  		<a data-bind="text: title, click: $root.showInfo.bind($data, $data)"></a>
          		  	</li>	
          		  	<!--/ko-->      	     	
          		</ul>
@@ -58,7 +58,7 @@
         <div id="projectHeader"><span class="projectTitle" data-bind="text: projectTitle"></span></div>
         <div id="map"></div>
  		<script async defer
-        	src="https://maps.googleapis.com/maps/api/js?libraries=places,geometry,drawing&key=MYAPIKEY&v=3&callback=initMap">
+        	src="https://maps.googleapis.com/maps/api/js?libraries=places,geometry,drawing&key=AIzaSyDb8WsHbwDv-oX5cQ3MpTBVJtTP8-V6EHA&v=3&callback=initMap">
    		</script>
         <!-- /#page-content-wrapper -->
     </div>
