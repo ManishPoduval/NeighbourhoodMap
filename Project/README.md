@@ -16,7 +16,7 @@ A simple neighbourhood map made using Google's map API and Foursquare's venue AP
 	- Foursquare venues API
 	
 # STEPS TO RUN 
-	- clone the github repo at https://github.com/ManishPoduval/NeighbourhoodMap.git OR unzip the file provided.
+	- clone the github repo at https://github.com/ManishPoduval/NeighbourhoodMap.git.
 	- go to the projects directory if you've cloned the repo
 	- open the index.html file in any of the browers
 
